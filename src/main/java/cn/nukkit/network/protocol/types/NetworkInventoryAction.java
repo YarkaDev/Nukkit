@@ -194,27 +194,37 @@ public class NetworkInventoryAction {
 
                     switch (this.windowId) {
                         case SOURCE_TYPE_ANVIL_INPUT:
-                            //System.out.println("action input");
-                            this.inventorySlot = 0;
-                            return new SlotChangeAction(anvil, this.inventorySlot, this.oldItem, this.newItem);
+                            anvil.clear(0);
+                            return new SlotChangeAction(anvil, inventorySlot, oldItem, newItem);
                         case SOURCE_TYPE_ANVIL_MATERIAL:
-                            //System.out.println("material");
-                            this.inventorySlot = 1;
-                            return new SlotChangeAction(anvil, this.inventorySlot, this.oldItem, this.newItem);
+                            return new SlotChangeAction(anvil, inventorySlot, oldItem, newItem);
                         case SOURCE_TYPE_ANVIL_OUTPUT:
-                            //System.out.println("action output");
-                            break;
+                            //useless
+                            return null;
                         case SOURCE_TYPE_ANVIL_RESULT:
                             this.inventorySlot = 2;
+
                             anvil.clear(0);
+
                             Item material = anvil.getItem(1);
-                            if (!material.isNull()) {
-                                material.setCount(material.getCount() - 1);
+                            if(!material.isNull()) {
+                                --material.count;
                                 anvil.setItem(1, material);
                             }
-                            anvil.setItem(2, this.oldItem);
-                            //System.out.println("action result");
-                            return new SlotChangeAction(anvil, this.inventorySlot, this.oldItem, this.newItem);
+
+                            InventoryAnvilResultEvent event = new InventoryAnvilResultEvent(anvil, oldItem);
+                            Server.getInstance().getPluginManager().callEvent(event);
+
+                            Item res = oldItem.clone();
+                            oldItem.count = 0;
+                            anvil.setItem(0, oldItem);
+
+                            if(!event.isCancelled()) {
+                                player.getInventory().addItem(res);
+                                anvil.clearAll();
+                            }
+
+                            return null;
                     }
                 }
 
